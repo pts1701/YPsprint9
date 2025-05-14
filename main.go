@@ -18,7 +18,7 @@ const (
 func generateRandomElements(size int) []int {
 	// ваш код здесь
 	if size < 1 {
-		log.Println("Error: size is 1 or less than 1")
+		log.Println("Error: size less than 1")
 		return []int{}
 	}
 	r := rand.New(rand.NewSource(time.Now().UnixNano()))
@@ -26,6 +26,8 @@ func generateRandomElements(size int) []int {
 	for i := 0; i < size; i++ {
 
 		result[i] = r.Intn(size) + 1
+		// +1 потому, что в задании написано "максимальное значение в слайсе целых положительных чисел"
+		//без +1 Intn() генерирует в значения 0
 	}
 
 	return result
@@ -55,34 +57,31 @@ func maxChunks(data []int) int {
 	var wg sync.WaitGroup
 
 	for i := 0; i < CHUNKS; i++ {
+		start := i * size
+		end := start + size
+
+		// Обработка последнего chunk, если длина не делится нацело
+		if i == CHUNKS-1 {
+			end = len(data)
+		}
+
+		// Пропуск пустых chunk
+		if start >= end {
+			continue
+		}
+
+		chunk := data[start:end]
+
 		wg.Add(1)
-		go func(chunkIndex int) {
+		go func(chunk []int, index int) {
 			defer wg.Done()
-
-			start := chunkIndex * size
-			end := start + size
-
-			// Обработка последнего chunk, если длина не делится нацело
-			if chunkIndex == CHUNKS-1 {
-				end = len(data)
-			}
-
-			// Если chunk выходит за границы массива
-			if start >= len(data) {
-				return
-			}
-
-			chunk := data[start:end]
-			if len(chunk) > 0 {
-				maxes[chunkIndex] = slices.Max(chunk)
-			}
-		}(i)
+			maxes[index] = maximum(chunk)
+		}(chunk, i)
 	}
 
 	wg.Wait()
 
-	return slices.Max(maxes)
-
+	return maximum(maxes)
 }
 
 func main() {
